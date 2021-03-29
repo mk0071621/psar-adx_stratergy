@@ -10,13 +10,16 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-ticker='^NSEI'
+stocks=['INDUSINDBK.NS','HDFCBANK.NS','ICICIBANK.NS','MARUTI.NS','TCS.NS','INFY.NS','ITC.NS']
 end=dt.datetime.today()
 start=dt.datetime.today()-dt.timedelta(3650)
+stock_data={}
 
 ohclv_data=pd.DataFrame()
-ohclv_data=yf.download(ticker,start,end)
-ohclv_data=ohclv_data.dropna()
+for ticker in stocks:
+    ohclv_data=yf.download(ticker,start,end)
+    ohclv_data=ohclv_data.dropna()
+    stock_data['{}'.format(ticker)]=ohclv_data
 def ATR(DF,n):
     df=DF.copy()
     df['H-L']=abs(df['High']-df['Low'])
@@ -159,55 +162,59 @@ def PSAR(DF):
     df9['PSAR']=psar
     return df9
 
-
-df1=PSAR(ohclv_data)
-df2=ADX(ohclv_data, 14)
-x=pd.DataFrame()
-x=ohclv_data.copy()
-p=np.asarray(df1.iloc[-len(x):,6].values)
-p=p.reshape(len(p),1)
-x['PSAR']=df1.iloc[-len(p):,6].values
-a=np.asarray(df2.iloc[-len(x):,17].values)
-a=a.reshape(len(a),1)
-x['ADX']=df2.iloc[-len(a):,17].values
-a_plus=np.asarray(df2.iloc[-len(x):,12].values)
-a_plus=a_plus.reshape(len(a_plus),1)
-x['DI+']=df2.iloc[-len(a):,12].values
-a_minus=np.asarray(df2.iloc[-len(x):,13].values)
-a_minus=a_minus.reshape(len(a),1)
-x['DI-']=df2.iloc[-len(a):,13].values
-x=x.dropna()
-p=x['PSAR'].tolist()
-o=x['Open'].tolist()
-psar_trend=[]
-for i in range(0,len(p)):
-    if p[i] < o[i]:
-        psar_trend.append(1)
-    else:
-        psar_trend.append(0)
-psar_trend=pd.DataFrame(psar_trend)
-x['PSAR_trend']=psar_trend.iloc[-len(p):,0].values
-adx=x['ADX'].tolist()
-a_plus=x['DI+'].tolist()
-a_minus=x['DI-'].tolist()
-adx_trend=[]
-for i in range(0,len(adx)):
-    if adx[i]>15 and a_plus[i]>=a_minus[i]:
-        adx_trend.append(1)
-    else:
-        adx_trend.append(0)
-adx_trend=pd.DataFrame(adx_trend)
-x['ADX_trend']=adx_trend.iloc[-len(adx):,0].values
-signal=[]
-adx_trend=adx_trend[0].tolist()
-psar_trend=psar_trend[0].tolist()
-for i in range(0,len(psar_trend)):
-    if psar_trend[i]==1 and adx_trend[i]==1:
-        signal.append(1)
-    elif psar_trend[i]==0 and adx_trend[i]==0:
-        signal.append(-1)
-    else:
-        signal.append(0)
-signal=pd.DataFrame(signal)
-x['SIGNAL']=signal.iloc[-len(signal):,0].values
+signal_data={}
+for ticker in stocks:
+    df1=PSAR(stock_data[ticker])
+    df2=ADX(stock_data[ticker], 14)
+    x=pd.DataFrame()
+    y=pd.DataFrame()
+    x=stock_data[ticker].copy()
+    p=np.asarray(df1.iloc[-len(x):,6].values)
+    p=p.reshape(len(p),1)
+    x['PSAR']=df1.iloc[-len(p):,6].values
+    a=np.asarray(df2.iloc[-len(x):,17].values)
+    a=a.reshape(len(a),1)
+    x['ADX']=df2.iloc[-len(a):,17].values
+    a_plus=np.asarray(df2.iloc[-len(x):,12].values)
+    a_plus=a_plus.reshape(len(a_plus),1)
+    x['DI+']=df2.iloc[-len(a):,12].values
+    a_minus=np.asarray(df2.iloc[-len(x):,13].values)
+    a_minus=a_minus.reshape(len(a),1)
+    x['DI-']=df2.iloc[-len(a):,13].values
+    x=x.dropna()
+    p=x['PSAR'].tolist()
+    o=x['Open'].tolist()
+    psar_trend=[]
+    for i in range(0,len(p)):
+        if p[i] < o[i]:
+            psar_trend.append(1)
+        else:
+            psar_trend.append(0)
+    psar_trend=pd.DataFrame(psar_trend)
+    x['PSAR_trend']=psar_trend.iloc[-len(p):,0].values
+    adx=x['ADX'].tolist()
+    a_plus=x['DI+'].tolist()
+    a_minus=x['DI-'].tolist()
+    adx_trend=[]
+    for i in range(0,len(adx)):
+        if adx[i]>=20 and a_plus[i]>=a_minus[i]:
+            adx_trend.append(1)
+        else:
+            adx_trend.append(0)
+    adx_trend=pd.DataFrame(adx_trend)
+    x['ADX_trend']=adx_trend.iloc[-len(adx):,0].values
+    signal=[]
+    adx_trend=adx_trend[0].tolist()
+    psar_trend=psar_trend[0].tolist()
+    for i in range(0,len(psar_trend)):
+        if psar_trend[i]==1 and adx_trend[i]==1:
+            signal.append(1)
+        elif psar_trend[i]==0 and adx_trend[i]==0:
+            signal.append(-1)
+        else:
+            signal.append(0)
+    signal=pd.DataFrame(signal)
+    x['SIGNAL']=signal.iloc[-len(signal):,0].values
+    signal_data['{}'.format(ticker)]=x
+  
 
